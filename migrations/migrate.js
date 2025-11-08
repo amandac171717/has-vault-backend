@@ -95,20 +95,20 @@ export async function runMigrations() {
         let errorCount = 0;
         const errors = [];
 
-        for (let i = 0; i < statements.length; i++) {
-            const statement = statements[i];
+        for (let i = 0; i < filteredStatements.length; i++) {
+            const statement = filteredStatements[i];
             if (statement.trim() && statement.length > 5) { // Only process non-empty statements
                 try {
                     await query(statement);
                     successCount++;
-                    console.log(`✅ Statement ${i + 1}/${statements.length} executed successfully`);
+                    console.log(`✅ Statement ${i + 1}/${filteredStatements.length} executed successfully`);
                 } catch (error) {
                     // Ignore "already exists" errors (these are OK)
                     if (error.message.includes('already exists') || 
                         error.message.includes('duplicate key') ||
                         error.message.includes('relation') && error.message.includes('already exists')) {
                         successCount++;
-                        console.log(`ℹ️ Statement ${i + 1}/${statements.length} skipped (already exists)`);
+                        console.log(`ℹ️ Statement ${i + 1}/${filteredStatements.length} skipped (already exists)`);
                     } else {
                         errorCount++;
                         const errorInfo = {
@@ -117,7 +117,7 @@ export async function runMigrations() {
                             code: error.code
                         };
                         errors.push(errorInfo);
-                        console.error(`❌ Statement ${i + 1}/${statements.length} failed:`, error.message);
+                        console.error(`❌ Statement ${i + 1}/${filteredStatements.length} failed:`, error.message);
                         console.error(`   Statement preview:`, statement.substring(0, 150));
                     }
                 }
