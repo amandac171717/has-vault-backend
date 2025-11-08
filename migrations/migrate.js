@@ -22,9 +22,72 @@ export async function runMigrations() {
         const schemaPath = path.join(__dirname, 'schema.sql');
         const schema = fs.readFileSync(schemaPath, 'utf8');
 
-        // Split by semicolons and execute each statement
-        const statements = schema
-            .split(';')
+        // Split SQL into statements, handling dollar-quoted strings properly
+        const statements = [];
+        let currentStatement = '';
+        let inDollarQuote = false;
+        let dollarTag = '';
+        
+        // Remove comments first
+        const lines = schema.split('\n');
+        const cleanedLines = lines.map(line => {
+            // Remove single-line comments
+            const commentIndex = line.indexOf('--');
+            if (commentIndex >= 0) {
+                return line.substring(0, commentIndex);
+            }
+            return line;
+        }).join('\n');
+        
+        // Split by semicolons, but respect dollar-quoted strings
+        for (let i = 0; i < cleanedLines.length; i++) {
+            const char = cleanedLines[i];
+            const nextChar = cleanedLines[i + 1];
+            
+            if (!inDollarQuote) {
+                // Check for start of dollar quote: $tag$ or $$
+                if (char === '$') {
+                    const match = cleanedLines.substring(i).match(/^\$([^$]*)\$/);
+                    if (match) {
+                        dollarTag = match[0];
+                        inDollarQuote = true;
+                        currentStatement += dollarTag;
+                        i += dollarTag.length - 1;
+                        continue;
+                    }
+                }
+                
+                // Check for end of statement (semicolon outside dollar quotes)
+                if (char === ';') {
+                    const trimmed = currentStatement.trim();
+                    if (trimmed.length > 0) {
+                        statements.push(trimmed);
+                    }
+                    currentStatement = '';
+                    continue;
+                }
+            } else {
+                // Inside dollar quote - look for closing tag
+                if (cleanedLines.substring(i).startsWith(dollarTag)) {
+                    currentStatement += dollarTag;
+                    i += dollarTag.length - 1;
+                    inDollarQuote = false;
+                    dollarTag = '';
+                    continue;
+                }
+            }
+            
+            currentStatement += char;
+        }
+        
+        // Add final statement if any
+        const trimmed = currentStatement.trim();
+        if (trimmed.length > 0) {
+            statements.push(trimmed);
+        }
+        
+        // Filter out empty statements
+        const filteredStatements = statements
             .map(s => s.trim())
             .filter(s => s.length > 0 && !s.startsWith('--'));
 
