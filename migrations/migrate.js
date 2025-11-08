@@ -19,6 +19,15 @@ export async function runMigrations() {
             throw new Error('Cannot connect to database: ' + connError.message);
         }
 
+        // Create UUID extension FIRST (required for uuid_generate_v4())
+        try {
+            await query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+            console.log('✅ UUID extension created/verified');
+        } catch (extError) {
+            console.error('⚠️ Warning: Could not create UUID extension:', extError.message);
+            // Continue anyway - might already exist or might not have permission
+        }
+
         const schemaPath = path.join(__dirname, 'schema.sql');
         const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -155,6 +164,13 @@ export async function runMigrations() {
             // Try to create missing tables individually
             for (const tableName of missingTables) {
                 try {
+                    // Ensure UUID extension exists before creating tables
+                    try {
+                        await query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+                    } catch (e) {
+                        // Extension might already exist or no permission
+                    }
+                    
                     if (tableName === 'users') {
                         await query(`
                             CREATE TABLE IF NOT EXISTS users (
