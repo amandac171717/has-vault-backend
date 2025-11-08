@@ -95,13 +95,22 @@ app.use((req, res) => {
 
 // Run migrations on startup (in production)
 if (process.env.NODE_ENV === 'production') {
-    runMigrations().then(() => {
-        startServer();
-    }).catch((error) => {
-        console.error('❌ Failed to run migrations:', error);
-        // Still start server - migrations might already be done
-        startServer();
-    });
+    // Wait a bit for database connection to be ready
+    setTimeout(async () => {
+        try {
+            console.log('🔄 Starting database migrations...');
+            await runMigrations();
+            console.log('✅ Migrations completed, starting server...');
+            startServer();
+        } catch (error) {
+            console.error('❌ Failed to run migrations:', error);
+            console.error('Error details:', error.message);
+            console.error('Stack:', error.stack);
+            // Still start server - migrations might already be done
+            console.log('⚠️ Starting server anyway (migrations may have failed)');
+            startServer();
+        }
+    }, 2000); // Wait 2 seconds for database connection
 } else {
     startServer();
 }
