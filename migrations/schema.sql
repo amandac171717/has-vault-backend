@@ -1,12 +1,13 @@
 -- HSA Vault Database Schema
 -- PostgreSQL Database
 
--- Enable UUID extension
+-- Enable UUID extension (if available, otherwise use gen_random_uuid())
+-- Note: gen_random_uuid() is built-in to PostgreSQL 13+ and doesn't need extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -26,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 
 -- Receipts table
 CREATE TABLE IF NOT EXISTS receipts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     
     -- Receipt data
@@ -65,7 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_receipts_deleted_at ON receipts(deleted_at);
 
 -- Audit log table (for HIPAA compliance)
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
     resource_type VARCHAR(50),
@@ -84,7 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, 
 
 -- User sessions table (optional, for token management)
 CREATE TABLE IF NOT EXISTS user_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash VARCHAR(255) NOT NULL,
     ip_address INET,

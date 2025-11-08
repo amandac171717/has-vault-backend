@@ -174,7 +174,7 @@ export async function runMigrations() {
                     if (tableName === 'users') {
                         await query(`
                             CREATE TABLE IF NOT EXISTS users (
-                                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                 username VARCHAR(255) UNIQUE NOT NULL,
                                 email VARCHAR(255) UNIQUE NOT NULL,
                                 password_hash VARCHAR(255) NOT NULL,
@@ -194,7 +194,7 @@ export async function runMigrations() {
                     } else if (tableName === 'receipts') {
                         await query(`
                             CREATE TABLE IF NOT EXISTS receipts (
-                                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                 user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                                 date DATE NOT NULL,
                                 vendor VARCHAR(255),
@@ -220,7 +220,7 @@ export async function runMigrations() {
                     } else if (tableName === 'audit_logs') {
                         await query(`
                             CREATE TABLE IF NOT EXISTS audit_logs (
-                                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                 user_id UUID REFERENCES users(id) ON DELETE SET NULL,
                                 action VARCHAR(100) NOT NULL,
                                 resource_type VARCHAR(50),
@@ -235,7 +235,7 @@ export async function runMigrations() {
                     } else if (tableName === 'user_sessions') {
                         await query(`
                             CREATE TABLE IF NOT EXISTS user_sessions (
-                                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                 user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                                 token_hash VARCHAR(255) NOT NULL,
                                 ip_address INET,
