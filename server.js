@@ -10,6 +10,7 @@ import receiptRoutes from './routes/receipts.js';
 import userRoutes from './routes/users.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticateToken } from './middleware/auth.js';
+import { runMigrations } from './migrations/migrate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,11 +93,26 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 HSA Vault API server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔒 Health check: http://localhost:${PORT}/health`);
-});
+// Run migrations on startup (in production)
+if (process.env.NODE_ENV === 'production') {
+    runMigrations().then(() => {
+        startServer();
+    }).catch((error) => {
+        console.error('❌ Failed to run migrations:', error);
+        // Still start server - migrations might already be done
+        startServer();
+    });
+} else {
+    startServer();
+}
+
+function startServer() {
+    app.listen(PORT, () => {
+        console.log(`🚀 HSA Vault API server running on port ${PORT}`);
+        console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🔒 Health check: http://localhost:${PORT}/health`);
+    });
+}
 
 export default app;
 

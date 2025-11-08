@@ -6,7 +6,7 @@ import { query } from '../config/database.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function runMigrations() {
+export async function runMigrations() {
     try {
         console.log('🔄 Running database migrations...');
 
@@ -34,11 +34,20 @@ async function runMigrations() {
         }
 
         console.log('✅ Database migrations completed successfully');
+        return true;
     } catch (error) {
         console.error('❌ Migration failed:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-runMigrations();
+// Only run migrations directly if this file is executed directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+    runMigrations().then(() => {
+        process.exit(0);
+    }).catch((error) => {
+        console.error('Migration failed:', error);
+        process.exit(1);
+    });
+}
 
